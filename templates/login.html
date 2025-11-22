@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker | Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}" />
+</head>
+
+<body>
+
+    <div class="login-container">
+        <h1>Attendance Tracker Login</h1>
+        <form method="POST">
+            <label>User Type:
+                <select name="user_type" required>
+                    <option value="teacher">Teacher</option>
+                    <option value="student">Student</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </label>
+
+            <label>ID:
+                <input type="text" name="user_id" placeholder="Enter your ID" required>
+            </label>
+
+            <label>Password:
+                <div class="password-wrapper">
+                    <input id="password" type="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="toggle-password" aria-pressed="false" aria-label="Show password"
+                        title="Show password">
+                        <!-- Open eye (visible) shown when password is hidden -->
+                        <svg class="icon-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="currentColor"
+                                d="M12 5c-7 0-11 6-11 7s4 7 11 7 11-6 11-7-4-7-11-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z">
+                            </path>
+                            <circle cx="12" cy="12" r="2.5" fill="white"></circle>
+                        </svg>
+                        <!-- Eye with slash (hidden) shown when password is visible -->
+                        <svg class="icon-eye-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            aria-hidden="true" style="display:none">
+                            <path fill="currentColor"
+                                d="M2 4.27L3.28 3 21 20.72 19.73 22 16.9 19.18C15.46 19.73 13.77 20 12 20c-7 0-11-6-11-7 0-.57.37-1.51 1.02-2.56L2 4.27zM12 6a6 6 0 0 1 6 6c0 .73-.14 1.42-.38 2.05l-1.46-1.46A4 4 0 0 0 12 8c-.74 0-1.43.2-2.03.55L8.6 7.18A6 6 0 0 1 12 6z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </label>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <div class="footer">
+            &copy; 2025 Attendance Tracker. All Rights Reserved.
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div id="flashed" data-messages='{{ messages|tojson|safe }}' style="display:none"></div>
+        <script>
+            (function () {
+                const el = document.getElementById('flashed');
+                const flashed_messages = el && el.dataset && el.dataset.messages ? JSON.parse(el.dataset.messages) : [];
+                flashed_messages.forEach(function (m) {
+                    alert(m);
+                });
+            })();
+        </script>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+        (function () {
+            const toggle = document.querySelector('.toggle-password');
+            const pwd = document.getElementById('password');
+            if (!toggle || !pwd) return;
+
+            const eye = toggle.querySelector('.icon-eye');
+            const eyeOff = toggle.querySelector('.icon-eye-off');
+
+            // ensure initial icon state matches the input
+            eye.style.display = pwd.type === 'password' ? '' : 'none';
+            eyeOff.style.display = pwd.type === 'password' ? 'none' : '';
+
+            toggle.addEventListener('click', function () {
+                const isHidden = pwd.type === 'password';
+                pwd.type = isHidden ? 'text' : 'password';
+
+                // swap icons
+                eye.style.display = isHidden ? 'none' : '';
+                eyeOff.style.display = isHidden ? '' : 'none';
+
+                // update accessible label & pressed state
+                toggle.setAttribute('aria-pressed', String(isHidden));
+                const label = isHidden ? 'Hide password' : 'Show password';
+                toggle.setAttribute('aria-label', label);
+                toggle.title = label;
+            });
+        })();
+    </script>
+
+</body>
+
+</html>

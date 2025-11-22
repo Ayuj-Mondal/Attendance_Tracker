@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Mark Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='mark_attendance.css') }}" />
+</head>
+<body>
+    <div class="container my-5">
+        <div class="attendance-card">
+            <h3 class="header-title">
+                <i class="bi bi-clipboard-check me-1" style="font-size:1.35rem"></i>
+                Mark Attendance
+            </h3>
+
+            <div class="meta mt-3">
+                <div>
+                    <h5 class="fw-bold text-primary">Department: <span class="text-dark">{{ depart_info.Depart_name }}</span></h5>
+                    <div class="small-muted">Semester: <span class="fw-semibold text-dark">{{ sem }}</span> | Subject: <span class="fw-semibold text-dark">{{ subject }}</span></div>
+                </div>
+                <div class="ms-auto text-end d-none d-md-block">
+                    <div class="small-muted">Total Students: <span class="fw-semibold text-dark">{{ students|length }}</span></div>
+                    <div class="small-muted mt-1">Present: <span id="present_count_val" class="fw-semibold text-dark">0</span></div>
+                    <div class="small-muted mt-1">Absent: <span id="absent_count_val" class="fw-semibold text-dark">0</span></div>
+                </div>
+            </div>
+
+            <form method="POST" class="mt-4">
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Select Date:</label>
+                        <input type="date" name="date" id="date" class="form-control" required>
+                        <div id="attendance_message" class="small text-warning mt-2" style="display:none;"></div>
+                    </div>
+                    <div class="col-md-6 text-md-end text-center mt-3 mt-md-0">
+                        <button type="button" id="markAll" class="btn btn-success mark-all-btn">
+                            <i class="bi bi-check2-circle me-1"></i>Mark All Present
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive mt-3">
+                    <table class="table table-borderless align-middle text-center">
+                        <thead>
+                            <tr>
+                                <th style="width:15%;">S_ID</th>
+                                <th style="width:55%; text-align:left; padding-left:18px;">S_Name</th>
+                                <th style="width:30%;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                                <tr>
+                                    <td class="fw-semibold align-middle">{{ student.S_id }}</td>
+                                    <td class="text-start ps-3">{{ student.S_name }}</td>
+                                    <td class="status-radio">
+                                        <label class="text-success" title="Present">
+                                            <input type="radio" name="status_{{ student.S_id }}" value="Present">
+                                            <i class="bi bi-person-check-fill"></i> Present
+                                        </label>
+                                        <label class="text-danger" title="Absent">
+                                            <input type="radio" name="status_{{ student.S_id }}" value="Absent">
+                                            <i class="bi bi-person-x-fill"></i> Absent
+                                        </label>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save2 me-1"></i> Submit Attendance
+                    </button>
+                    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary px-4 ms-2">
+                        <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Auto-set today's date
+        document.addEventListener('DOMContentLoaded', function () {
+            const dateInput = document.getElementById('date');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+
+            // Utility to sync label "active" styling with checked radios
+            function refreshStatusLabels() {
+                document.querySelectorAll('.status-radio').forEach(group => {
+                    group.querySelectorAll('label').forEach(label => label.classList.remove('active'));
+                    group.querySelectorAll('input[type="radio"]').forEach(radio => {
+                        if (radio.checked) {
+                            const lbl = radio.closest('label') || radio.parentElement;
+                            if (lbl) lbl.classList.add('active');
+                        }
+                    });
+                });
+                // Update present and absent count display
+                const presentCount = document.querySelectorAll('input[type="radio"][value="Present"]:checked').length;
+                const absentCount = document.querySelectorAll('input[type="radio"][value="Absent"]:checked').length;
+                const pcEl = document.getElementById('present_count_val');
+                const acEl = document.getElementById('absent_count_val');
+                if (pcEl) pcEl.textContent = presentCount;
+                if (acEl) acEl.textContent = absentCount;
+            }
+
+            // Initialize label states
+            refreshStatusLabels();
+
+            // Update active class when radios change (delegated)
+            document.querySelectorAll('.status-radio').forEach(group => {
+                group.addEventListener('change', function (e) {
+                    // small timeout to allow radio checked state to update
+                    setTimeout(refreshStatusLabels, 10);
+                });
+
+                // clicking label should also refresh (for browsers that don't fire change immediately)
+                group.querySelectorAll('label').forEach(lbl => {
+                    lbl.addEventListener('click', () => setTimeout(refreshStatusLabels, 10));
+                });
+            });
+
+            // Mark all present button behavior (retains radio inputs and names)
+            const markAllBtn = document.getElementById('markAll');
+            if (markAllBtn) {
+                markAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('input[value="Present"]').forEach(radio => radio.checked = true);
+                    refreshStatusLabels();
+                });
+            }
+
+            // Fetch attendance for the selected date and apply statuses if records exist
+            const subject = "{{ subject }}";
+            const semVal = "{{ sem }}";
+
+            function fetchAndApplyAttendance(dateStr) {
+                if (!dateStr) return;
+                const url = `/teacher/get_attendance/${encodeURIComponent(subject)}/${encodeURIComponent(semVal)}/${encodeURIComponent(dateStr)}`;
+                fetch(url)
+                    .then(resp => resp.json())
+                    .then(data => {
+                        if (!Array.isArray(data) || data.length === 0) {
+                            // No records found for this date: indicate a new date and leave statuses unmarked
+                            setAttendanceMessage('No attendance records for this date. This is a new date — please mark attendance.');
+                            // Uncheck all radios
+                            document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+                            // Refresh UI
+                            setTimeout(refreshStatusLabels, 10);
+                            return;
+                        }
+
+                        // Hide any previous message and apply each attendance record to the radio inputs
+                        clearAttendanceMessage();
+                        data.forEach(rec => {
+                            const sid = rec.S_id;
+                            const status = rec.Status; // 'Present' or 'Absent'
+                            const selector = `input[name="status_${sid}"][value="${status}"]`;
+                            const radio = document.querySelector(selector);
+                            if (radio) radio.checked = true;
+                        });
+
+                        // Refresh label active state after applying
+                        setTimeout(refreshStatusLabels, 10);
+                    })
+                    .catch(err => {
+                        console.error('Error fetching attendance records:', err);
+                    });
+            }
+
+            // On initial load, fetch attendance for today's date (if set)
+            if (dateInput && dateInput.value) {
+                fetchAndApplyAttendance(dateInput.value);
+            }
+
+            // When date changes, fetch attendance for that date
+            if (dateInput) {
+                dateInput.addEventListener('change', function () {
+                    // For a new date we want statuses to be unmarked by default
+                    document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+                    clearAttendanceMessage();
+                    fetchAndApplyAttendance(this.value);
+                });
+            }
+
+            // Attendance message helpers
+            function setAttendanceMessage(msg) {
+                const el = document.getElementById('attendance_message');
+                if (el) {
+                    el.textContent = msg;
+                    el.style.display = 'block';
+                }
+            }
+
+            function clearAttendanceMessage() {
+                const el = document.getElementById('attendance_message');
+                if (el) {
+                    el.textContent = '';
+                    el.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

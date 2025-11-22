@@ -1,0 +1,114 @@
+:root {
+    --primary: #0d6efd;
+    --primary-dark: #0047b3;
+    --success: #20c997;
+    --danger: #ff4d4f;
+    --muted: #6c757d;
+}
+
+/* Page Background */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(1200px 600px at -10% 10%, rgba(13, 110, 253, 0.08), transparent),
+                radial-gradient(1000px 500px at 110% 90%, rgba(0, 123, 255, 0.05), transparent),
+                linear-gradient(180deg, #f6f9ff 0%, #f4f6fb 100%);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+}
+
+/* Page Title */
+.container h2 {
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    width: fit-content;
+    padding: 10px 18px;
+    border-radius: 8px;
+    color: #fff;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(13, 110, 253, .15);
+}
+
+/* Subject Group Header */
+h4 {
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin: 20px 0 10px;
+    border-left: 4px solid var(--primary);
+    padding-left: 10px;
+}
+
+/* Notification Card Styling */
+.list-group-item {
+    border-radius: 14px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border: 1px solid rgba(13, 110, 253, 0.15);
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.12);
+}
+
+/* Bold Action Row */
+.list-group-item h5 {
+    font-weight: 600;
+    color: #0a0a0a;
+}
+
+/* Reason & Proof Labels */
+.list-group-item p strong {
+    color: #0d47a1;
+}
+
+/* Form inside expanded card */
+form input[type="text"],
+form input[type="file"] {
+    border-radius: 10px;
+    padding: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+form button {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    border: none;
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.12);
+    transition: all .15s ease;
+}
+
+form button:hover {
+    opacity: .92;
+}
+
+/* Success Toast */
+#successAlert {
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.15);
+}
+
+/* Back Button */
+.btn-secondary {
+    border-radius: 8px;
+    background: linear-gradient(90deg, #6c757d, #495057);
+    border: none;
+    box-shadow: 0 4px 12px rgba(140, 140, 140, .15);
+}
+
+.btn-secondary:hover {
+    opacity: .92;
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+    .container h2 {
+        font-size: 1.4rem;
+    }
+    .list-group-item {
+        padding: 12px;
+    }
+}

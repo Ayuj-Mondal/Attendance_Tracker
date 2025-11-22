@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Attendance Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}" />
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg py-3">
+        <div class="container">
+            <span class="navbar-brand text-white fs-4">Attendance Tracker | Admin Dashboard</span>
+            <a href="{{ url_for('logout') }}" class="btn logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <h1>Welcome, Admin 👋</h1>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+            <li class="nav-item"><a class="nav-link active" id="department-tab" data-bs-toggle="tab" href="#department"
+                    role="tab">Departments</a></li>
+            <li class="nav-item"><a class="nav-link" id="teacher-tab" data-bs-toggle="tab" href="#teacher"
+                    role="tab">Teachers</a></li>
+            <li class="nav-item"><a class="nav-link" id="student-tab" data-bs-toggle="tab" href="#student"
+                    role="tab">Students</a></li>
+        </ul>
+
+        <div class="tab-content" id="adminTabContent">
+
+            <!-- Department Tab -->
+            <div class="tab-pane fade show active" id="department" role="tabpanel">
+                <h3 class="mt-3">Department Records</h3>
+                {% for (depart_id, sem), data in grouped_departments.items() %}
+                <div class="card p-3 my-3">
+                    <h5 class="mb-3 text-primary">Department ID: {{ depart_id }} | Semester: {{ sem }}</h5>
+                    <h6 class="text-muted mb-3">Name: {{ data.Depart_name }}</h6>
+
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subject in data.subjects %}
+                            <tr>
+                                <td>{{ subject }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_department', depart_id=depart_id, sem=sem, subject=subject) }}"
+                                        class="btn btn-warning btn-sm">Edit</a>
+                                    <a href="{{ url_for('delete_department', depart_id=depart_id, sem=sem, subject=subject) }}"
+                                        class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Delete this record?')">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+
+                <div class="card p-4 mt-4">
+                    <h4 class="mb-3 text-success">Add New Department</h4>
+                    <form method="POST" action="{{ url_for('add_department') }}">
+                        <div class="mb-3">
+                            <label class="form-label">Department ID</label>
+                            <input id="add_depart_id" type="text" name="depart_id" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Department Name</label>
+                            <input id="add_department_name" type="text" name="depart_name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Semester</label>
+                            <input type="number" name="sem" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Subjects</label>
+                            <div id="subjects-container">
+                                <div class="input-group mb-2">
+                                    <input type="text" name="subjects[]" class="form-control" required>
+                                    <button type="button" class="btn btn-success" onclick="addSubject()">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Department</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Teacher Tab -->
+            <div class="tab-pane fade" id="teacher" role="tabpanel">
+                <h3 class="mt-3">Teacher Records</h3>
+                {% for depart_id, sems in grouped_teachers.items() %}
+                <div class="card p-3 my-3">
+                    <h5 class="text-primary">Department ID: {{ depart_id }}</h5>
+                    {% for sem, data in sems.items() %}
+                    <h6 class="text-muted">Semester: {{ sem }}</h6>
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Subject</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for teacher in data.teachers %}
+                            <tr>
+                                <td>{{ teacher.T_id }}</td>
+                                <td>{{ teacher.T_name }}</td>
+                                <td>{{ teacher.Subject }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_teacher', t_id=teacher.T_id, sem=teacher.Sem, subject=teacher.Subject) }}"
+                                        class="btn btn-warning btn-sm">Edit</a>
+                                    <a href="{{ url_for('delete_teacher', t_id=teacher.T_id, sem=teacher.Sem, subject=teacher.Subject) }}"
+                                        class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Delete this record?')">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <div class="card p-4 mt-4">
+                    <h4 class="mb-3 text-success">Add New Teacher</h4>
+                    <form method="POST" action="{{ url_for('add_teacher') }}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Teacher ID</label>
+                                <input type="text" name="t_id" id="t_id" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teacher Name</label>
+                                <input type="text" name="t_name" id="t_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" id="password" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Department ID</label>
+                                <select id="depart_id" name="depart_id" class="form-control" required>
+                                    <option value="">-- Select Department ID --</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept }}">{{ dept }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Department Name</label>
+                                <input type="text" id="teacher_department_name" name="teacher_department_name" class="form-control" readonly>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Semester</label>
+                                <input type="number" name="sem" id="sem" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Subjects</label>
+                                <div id="subject-checkboxes" class="border p-2 rounded" style="min-height: 60px;">
+                                    <small class="text-muted">Enter Department ID and Semester to load subjects</small>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Add Teacher</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Student Tab -->
+            <div class="tab-pane fade" id="student" role="tabpanel">
+                <h3 class="mt-3">Student Records</h3>
+                {% for depart_id, sems in grouped_students.items() %}
+                <div class="card p-3 my-3">
+                    <h5 class="text-primary">Department ID: {{ depart_id }}</h5>
+                    {% for sem, data in sems.items() %}
+                    <h6 class="text-muted">Semester: {{ sem }}</h6>
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Department</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in data.students %}
+                            <tr>
+                                <td>{{ student.S_id }}</td>
+                                <td>{{ student.S_name }}</td>
+                                <td>{{ student.Depart_name }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_student', s_id=student.S_id) }}"
+                                        class="btn btn-warning btn-sm">Edit</a>
+                                    <a href="{{ url_for('delete_student', s_id=student.S_id) }}"
+                                        class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Delete this record?')">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <div class="card p-4 mt-4">
+                    <h4 class="mb-3 text-success">Add New Student</h4>
+                    <form method="POST" action="{{ url_for('add_student') }}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Student ID</label>
+                                <input type="text" name="s_id" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Student Name</label>
+                                <input type="text" name="s_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="department_id">Department ID</label>
+                                <select id="department_id" name="depart_id" class="form-control" required>
+                                        <option value="">-- Select Department ID --</option>
+                                        <!-- These will come from backend: a list of department IDs -->
+                                        {% for dept in departments %}
+                                        <option value="{{ dept }}">{{ dept }}</option>
+                                        {% endfor %}
+                                    </select>
+                            </div>
+                            <div class="form-group mt-3">
+                                <label for="department_name">Department Name</label>
+                                <input type="text" id="department_name" name="department_name" class="form-control"
+                                    readonly>
+                            </div>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="sem">Semester</label>
+                            <select id="student_sem" name="sem" class="form-control" required>
+                                    <option value="">-- Select Semester --</option>
+                                </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Add Student</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script>
+        function addSubject() {
+            $('#subjects-container').append('<div class="input-group mb-2"><input type="text" name="subjects[]" class="form-control" required><button type="button" class="btn btn-danger" onclick="$(this).parent().remove()">-</button></div>');
+        }
+        function addTeacherSubject() {
+            $('#teacher-subjects-container').append('<div class="input-group mb-2"><input type="text" name="subjects[]" class="form-control" required><button type="button" class="btn btn-danger" onclick="$(this).parent().remove()">-</button></div>');
+        }
+
+        $('#t_id').on('change', function () {
+            var t_id = $(this).val();
+            if (t_id) {
+                $.getJSON('/admin/get_teacher/' + t_id, function (data) {
+                    $('#t_name').val(data.t_name || '');
+                    $('#password').val(data.password || '');
+                });
+            } else {
+                $('#t_name').val('');
+                $('#password').val('');
+            }
+        });
+
+        // New: Fetch and display subjects as checkboxes when depart_id and sem change
+        // Also disable checkboxes for subjects the teacher already teaches for that depart+sem
+        $('#depart_id, #sem').on('change', function () {
+            var depart_id = $('#depart_id').val();
+            var sem = $('#sem').val();
+            var t_id = $('#t_id').val(); // current teacher id in the form
+            if (depart_id && sem) {
+                $.getJSON('/admin/get_subjects/' + depart_id + '/' + sem, function (data) {
+                    // If there's a teacher id entered, fetch existing subjects first
+                    if (t_id) {
+                        $.getJSON('/admin/get_teacher_subjects/' + encodeURIComponent(t_id) + '/' + encodeURIComponent(depart_id) + '/' + encodeURIComponent(sem), function (existing) {
+                            var existingSubjects = existing || [];
+                            var checkboxes = '';
+                            if (data.length > 0) {
+                                data.forEach(function (subject) {
+                                    var safeId = 'subj_' + subject.replace(/\s+/g, '_');
+                                    if (existingSubjects.indexOf(subject) !== -1) {
+                                        // disable checkbox for subjects already taught by this teacher
+                                        checkboxes += '<div class="form-check"><input class="form-check-input" type="checkbox" name="subjects[]" value="' + subject + '" id="' + safeId + '" disabled><label class="form-check-label text-muted" for="' + safeId + '">' + subject + ' <small class="text-muted">(already assigned)</small></label></div>';
+                                    } else {
+                                        checkboxes += '<div class="form-check"><input class="form-check-input" type="checkbox" name="subjects[]" value="' + subject + '" id="' + safeId + '"><label class="form-check-label" for="' + safeId + '">' + subject + '</label></div>';
+                                    }
+                                });
+                            } else {
+                                checkboxes = '<small class="text-muted">No subjects found for this Department ID and Semester.</small>';
+                            }
+                            $('#subject-checkboxes').html(checkboxes);
+                        }).fail(function () {
+                            $('#subject-checkboxes').html('<small class="text-danger">Error loading teacher subjects. Please try again.</small>');
+                        });
+                    } else {
+                        // No teacher id provided; render all subjects as selectable
+                        var checkboxes = '';
+                        if (data.length > 0) {
+                            data.forEach(function (subject) {
+                                var safeId = 'subj_' + subject.replace(/\s+/g, '_');
+                                checkboxes += '<div class="form-check"><input class="form-check-input" type="checkbox" name="subjects[]" value="' + subject + '" id="' + safeId + '"><label class="form-check-label" for="' + safeId + '">' + subject + '</label></div>';
+                            });
+                        } else {
+                            checkboxes = '<small class="text-muted">No subjects found for this Department ID and Semester.</small>';
+                        }
+                        $('#subject-checkboxes').html(checkboxes);
+                    }
+                }).fail(function () {
+                    $('#subject-checkboxes').html('<small class="text-danger">Error loading subjects. Please try again.</small>');
+                });
+            } else {
+                $('#subject-checkboxes').html('<small class="text-muted">Enter Department ID and Semester to load subjects</small>');
+            }
+        });
+
+        document.getElementById("department_id").addEventListener("change", function () {
+            const deptId = this.value;
+            const deptNameInput = document.getElementById("department_name");
+            // student_sem is the semester dropdown specific to the Student form
+            const semDropdown = document.getElementById("student_sem");
+
+            if (!deptId) {
+                deptNameInput.value = "";
+                semDropdown.innerHTML = '<option value="">-- Select Semester --</option>';
+                return;
+            }
+
+            fetch(`/admin/get_department_details/${deptId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Autofill department name
+                    deptNameInput.value = data.name;
+
+                    // Clear and repopulate student-semester dropdown
+                    semDropdown.innerHTML = '<option value="">-- Select Semester --</option>';
+                    data.semesters.forEach(sem => {
+                        const opt = document.createElement("option");
+                        opt.value = sem;
+                        opt.textContent = "Semester " + sem;
+                        semDropdown.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Error fetching department data:", err));
+        });
+
+        // Autofill Department Name in the Department -> Add New Department form
+        const addDeptInput = document.getElementById("add_depart_id");
+        if (addDeptInput) {
+            addDeptInput.addEventListener("change", function () {
+                const id = this.value;
+                const nameInput = document.getElementById("add_department_name");
+                if (!id) {
+                    if (nameInput) nameInput.value = "";
+                    return;
+                }
+
+                fetch(`/admin/get_department_details/${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (nameInput) nameInput.value = data.name || "";
+                    })
+                    .catch(err => console.error("Error fetching department data for add form:", err));
+            });
+        }
+
+        // Autofill Department Name in the Teacher Add form when a department is selected
+        const teacherDeptSelect = document.getElementById("depart_id");
+        if (teacherDeptSelect) {
+            teacherDeptSelect.addEventListener("change", function () {
+                const id = this.value;
+                const nameInput = document.getElementById("teacher_department_name");
+                if (!id) {
+                    if (nameInput) nameInput.value = "";
+                    return;
+                }
+
+                fetch(`/admin/get_department_details/${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (nameInput) nameInput.value = data.name || "";
+                    })
+                    .catch(err => console.error("Error fetching teacher department data:", err));
+            });
+        }
+
+
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

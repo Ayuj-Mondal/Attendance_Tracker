@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='notifications.css') }}" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Notifications</h2>
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+        <!-- Success Alert -->
+        <div id="successAlert" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+            Submitted Successfully!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        {% if grouped_absences %}
+            {% for subject, absences in grouped_absences.items() %}
+                <h4>{{ subject }}</h4>
+                <div class="list-group mb-4">
+                    {% for absence in absences %}
+                    <div class="list-group-item">
+                        <h5 class="mb-1">{{ absence.Subject }} - {{ absence.Date }}</h5>
+                        <p class="mb-1"><strong>Action Taken:</strong> {{ absence.action_taken }}</p>
+                        {% if absence.reason %}
+                            <p class="mb-1"><strong>Reason:</strong> {{ absence.reason }}</p>
+                        {% endif %}
+                        {% if absence.proof %}
+                            <p class="mb-1"><strong>Proof:</strong> <a href="{{ url_for('static', filename=absence.proof) }}" target="_blank">View Proof</a></p>
+                        {% endif %}
+                        {% if absence.action_taken == "Ask Reason" %}
+                            <form method="POST" action="{{ url_for('update_reason', s_id=session['user_id'], subject=absence.Subject, date=absence.Date) }}" enctype="multipart/form-data" class="mt-2" id="form-{{ absence.Subject }}-{{ absence.Date }}">
+                                <div class="mb-2">
+                                    <input type="text" name="reason" class="form-control" placeholder="Enter reason" required>
+                                </div>
+                                <div class="mb-2">
+                                    <input type="file" name="proof" class="form-control" accept="image/*,.pdf,.doc,.docx">
+                                </div>
+                                <button class="btn btn-primary" type="submit">Submit Reason and Proof</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No absences requiring attention.</p>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle form submissions via AJAX
+            document.querySelectorAll('form[id^="form-"]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Prevent default form submission
+
+                    const formData = new FormData(this);
+
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success alert
+                            const alert = document.getElementById('successAlert');
+                            alert.style.display = 'block';
+                            alert.classList.add('show');
+                            // Hide after 5 seconds
+                            setTimeout(() => {
+                                alert.classList.remove('show');
+                                setTimeout(() => alert.style.display = 'none', 150);
+                            }, 5000);
+                            // Optionally, reload the page or update the UI
+                            // location.reload();
+                        } else {
+                            alert('Submission failed. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

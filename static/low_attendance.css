@@ -1,0 +1,51 @@
+/* Styles for Low Attendance page */
+
+table.table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+table.table tbody tr:hover {
+    background-color: #f0f8ff;
+}
+
+tr.expandable {
+    background-color: #fafafa;
+    border-top: 2px solid #007bff;
+}
+
+.badge.bg-warning.text-dark {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.action-buttons button {
+    margin-right: 5px;
+}
+
+.container h2 {
+    margin-bottom: 20px;
+}
+
+table.table-sm thead th {
+    background-color: #e9ecef;
+}
+
+input.form-control {
+    max-width: 250px;
+}
+
+/* Optional: smooth expand/collapse effect for expandable rows */
+tr.expandable {
+    display: none;
+}
+
+tr.expandable.show {
+    display: table-row;
+    animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

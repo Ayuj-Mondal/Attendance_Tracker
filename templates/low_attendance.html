@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Low Attendance Students</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='low_attendance.css') }}" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Low Attendance Students - {{ depart_info.Depart_name }} - Semester {{ sem }} - Subject: {{ subject }}</h2>
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+        {% if low_attendance_students %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>S_ID</th>
+                        <th>Name</th>
+                        <th>Attendance %</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in low_attendance_students %}
+                    <tr>
+                        <td>{{ student.S_id }}</td>
+                        <td>
+                            {{ student.S_name }}
+                            {% if student.has_reason %}
+                                <span class="badge bg-warning text-dark ms-2">Reason Submitted</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ student.percentage }}%</td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="askReasonAll('{{ student.S_id }}')">Ask Reason All</button>
+                        </td>
+                    </tr>
+                    <tr class="expandable" id="expand-{{ student.S_id }}" style="display: none;">
+                        <td colspan="4">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Reason</th>
+                                        <th>Proof</th>
+                                        <th>Action Taken</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for absent in student.absents %}
+                                    <tr>
+                                        <td>{{ absent.date }}</td>
+                                        <td>
+                                            {% if absent.action_taken == 'Ask Reason' %}
+                                                <input type="text" class="form-control" id="reason-{{ student.S_id }}-{{ absent.date }}" value="{{ absent.reason or '' }}" onchange="updateReason('{{ student.S_id }}', '{{ subject }}', '{{ absent.date }}', this.value)">
+                                            {% else %}
+                                                {{ absent.reason or 'N/A' }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if absent.proof %}
+                                                <a href="{{ url_for('static', filename=absent.proof) }}" target="_blank">VIEW</a>
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ absent.action_taken or 'None' }}</td>
+                                        <td>
+                                            {% if absent.action_taken != 'Approved' %}
+                                            <button class="btn btn-success btn-sm" onclick="approve('{{ student.S_id }}', '{{ subject }}', '{{ absent.date }}')">Approve</button>
+                                            {% endif %}
+                                            {% if absent.action_taken != 'Reject' %}
+                                            <button class="btn btn-danger btn-sm" onclick="reject('{{ student.S_id }}', '{{ subject }}', '{{ absent.date }}')">Reject</button>
+                                            {% endif %}
+                                            {% if absent.action_taken != 'Meet Me' %}
+                                            <button class="btn btn-info btn-sm" onclick="meetMe('{{ student.S_id }}', '{{ subject }}', '{{ absent.date }}')">Meet Me</button>
+                                            {% endif %}
+                                            {% if absent.action_taken != 'Ask Reason' %}
+                                            <button class="btn btn-warning btn-sm" onclick="askReason('{{ student.S_id }}', '{{ subject }}', '{{ absent.date }}')">Ask Reason</button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No students with low attendance.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function approve(s_id, subject, date) {
+            $.post('/approve_absent/' + s_id + '/' + subject + '/' + date, function(data) {
+                if (data.success) {
+                    alert('Approved');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        function reject(s_id, subject, date) {
+            $.post('/reject_absent/' + s_id + '/' + subject + '/' + date, function(data) {
+                if (data.success) {
+                    alert('Rejected');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        function meetMe(s_id, subject, date) {
+            $.post('/meet_me/' + s_id + '/' + subject + '/' + date, function(data) {
+                if (data.success) {
+                    alert('Meet Me requested');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        function askReason(s_id, subject, date) {
+            $.post('/ask_reason/' + s_id + '/' + subject + '/' + date, function(data) {
+                if (data.success) {
+                    alert('Reason asked');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        function askReasonAll(s_id) {
+            $.ajax({
+                url: '/ask_reason_all/' + '{{ subject }}' + '/' + '{{ sem }}',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({s_id: s_id}),
+                success: function(data) {
+                    if (data.success) {
+                        alert('Reason asked for all');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                }
+            });
+        }
+
+        function updateReason(s_id, subject, date, reason) {
+            $.ajax({
+                url: '/update_reason/' + s_id + '/' + subject + '/' + date,
+                type: 'POST',
+                data: {reason: reason},
+                success: function(data) {
+                    if (data.success) {
+                        console.log('Reason updated');
+                    } else {
+                        alert('Error updating reason');
+                    }
+                }
+            });
+        }
+
+        // Toggle expandable rows
+        $('tbody tr:not(.expandable)').click(function() {
+            var nextRow = $(this).next('.expandable');
+            if (nextRow.is(':visible')) {
+                nextRow.hide();
+            } else {
+                nextRow.show();
+            }
+        });
+    </script>
+</body>
+</html>
